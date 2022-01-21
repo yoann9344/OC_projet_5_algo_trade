@@ -12,3 +12,4 @@ serde = { version = "1", features = ["derive"] }
 clap = { version = "3", features = ["derive"] }
 rust_decimal = "1"
 rust_decimal_macros = "1"
+plotters = "0.3.1"
