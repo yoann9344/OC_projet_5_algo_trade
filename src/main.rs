@@ -214,21 +214,17 @@ fn optimized_recursive(data: Vec<Row>, balance: Decimal) -> Result<Best> {
             balance,
         };
         let mut earnings_increased = zero!();
-        // println!(
-        //     "Rec balance {} ; actions {:?} ; best {:?} ; earnings {}",
-        //     balance, actions, best, earnings
-        // );
         // println!("\nRecursive #{}", stack);
         for (i, row) in data.iter().enumerate() {
-            if balance < row.price {
+            if actions.contains(&i) {
                 // println!("Not enough capital. #{} => {}", stack, i + 1);
+                continue;
+            } else if balance < row.price {
+                // println!("Action already bought ! #{} => {}", stack, i + 1);
                 continue;
             } else if earnings_increased > zero!() {
                 // println!("Not enough benefits ! #{} => {}", stack, i + 1);
                 break;
-            } else if actions.contains(&i) {
-                // println!("Action already bought ! #{} => {}", stack, i + 1);
-                continue;
             } else {
                 let new_balance = balance - row.price;
                 let new_earnings = earnings + row.benefits;
@@ -433,7 +429,6 @@ fn curve_duration(algorithme: usize, data: Vec<Row>, balance: Decimal) -> Result
     let mut nb_actions: Vec<usize> = Vec::new();
     let data_len = data.len();
     let step = 10;
-    let mut coef = 50.0;
     for size in (0..1001).step_by(step) {
         let safe_size = max(2, min(size, data_len));
         let n = safe_size as f64;
@@ -449,12 +444,8 @@ fn curve_duration(algorithme: usize, data: Vec<Row>, balance: Decimal) -> Result
         println!("Plot {} : {:?}", safe_size, algo_duration);
         durations.push(algo_duration.as_micros() as i32);
         // let p_complexity = 50.0 * n.log(10f64);
-        let p_complexity = 0.2 * n;
+        let p_complexity = 0.3 * n;
         // let p_complexity = n * n.log(10f64);
-        // if coef == 1.0 {
-        //     coef = durations[durations.len() - 1] as f64 / p_complexity;
-        //     println!("coef {}", coef)
-        // }
         complexity.push((p_complexity) as i32);
     }
 

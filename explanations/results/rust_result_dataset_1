@@ -1,0 +1,31 @@
+Sorting duration : 145.423µs
+Actions to buy :
+Brute force, result : Best { earnings: 198.513430, actions: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 53, 719], balance: 0.00 } ; duration : 216.083µs
+Share-XJMO
+Share-KMTG
+Share-MTLR
+Share-GTQK
+Share-LRBZ
+Share-WPLI
+Share-GIAJ
+Share-GHIZ
+Share-ZSDE
+Share-IFCP
+Share-FKJW
+Share-NHWA
+Share-LPDM
+Share-QQTU
+Share-USSR
+Share-EMOV
+Share-LGWG
+Share-QLMK
+Share-SKKC
+Share-UEZB
+Share-CBNY
+Share-CGJM
+Share-EVUW
+Share-FHZN
+Share-DBUJ
+Best in test Best { earnings: 198.513430, actions: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 53, 719], balance: 0.00 }
+Checked benefits : 198.513430
+Checked balance : 0.00

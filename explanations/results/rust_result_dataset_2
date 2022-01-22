@@ -1,0 +1,28 @@
+Sorting duration : 87.295µs
+Actions to buy :
+Brute force, result : Best { earnings: 197.768345, actions: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 56, 200, 382], balance: 0.02 } ; duration : 125.26µs
+Share-PATS
+Share-ALIY
+Share-JWGF
+Share-PLLK
+Share-NDKR
+Share-FWBE
+Share-LFXB
+Share-ZOFA
+Share-ANFX
+Share-LXZU
+Share-FAPS
+Share-XQII
+Share-ECAQ
+Share-JGTW
+Share-IXCI
+Share-DWSK
+Share-ROOM
+Share-VCXT
+Share-YFVZ
+Share-OCKK
+Share-JMLZ
+Share-DYVD
+Best in test Best { earnings: 197.768345, actions: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 56, 200, 382], balance: 0.02 }
+Checked benefits : 197.768345
+Checked balance : 0.02
