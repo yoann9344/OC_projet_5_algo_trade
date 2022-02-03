@@ -5,11 +5,11 @@ use std::str::FromStr;
 use std::time::{Duration, Instant};
 
 use anyhow::Result;
-// use plotters;
-use plotters::prelude::{
-    AreaSeries, BitMapBackend, ChartBuilder, Color, IntoDrawingArea, LabelAreaPosition, BLUE, RED,
-    WHITE,
-};
+use plotters::prelude::*;
+// use plotters::prelude::{
+//     AreaSeries, BitMapBackend, ChartBuilder, Color, IntoDrawingArea, LabelAreaPosition,
+//     PathElement, SeriesLabelPosition, BLACK, BLUE, RED, WHITE,
+// };
 // use cached::proc_macro::cached;
 use clap::Parser;
 use rust_decimal::Decimal;
@@ -67,6 +67,7 @@ struct Best {
     balance: Decimal,
 }
 
+#[allow(unused)]
 #[derive(Debug, Clone)]
 struct RecursiveCached {
     argument: Vec<usize>,
@@ -356,44 +357,43 @@ fn brut_force_recursive_binary(data: Vec<Row>, balance: Decimal) -> Result<Best>
 }
 
 fn brut_force_recursive_redondant(data: Vec<Row>, balance: Decimal) -> Result<Best> {
-    let mut best = Best {
+    let best = Best {
         earnings: zero!(),
         actions: Vec::new(),
-        balance: zero!(),
+        balance: balance.clone(),
     };
 
     fn recursive(
-        balance: Decimal,
-        earnings: Decimal,
-        actions: &Vec<usize>,
-        best: &mut Best,
+        best: Best,
+        index: usize,
         // best: &mut Arc<Best>,
         data: &Vec<Row>,
-    ) {
-        // println!(
-        //     "Rec balance {} ; actions {:?} ; best {:?} ; earnings {}",
-        //     balance, actions, best, earnings
-        // );
-        for (i, row) in data.iter().enumerate() {
-            if actions.contains(&i) {
-                continue;
-            } else if balance >= row.price {
-                let new_balance = balance - row.price;
-                let new_earnings = earnings + row.benefits;
-                let mut new_actions = actions.clone();
-                new_actions.push(i.clone());
-                if new_earnings > best.earnings {
-                    best.earnings = new_earnings;
-                    best.actions = new_actions.clone().to_owned();
-                    best.balance = new_balance;
-                }
+    ) -> Best {
+        if index >= data.len() {
+            return best;
+        }
+        let row = data[index].clone();
+        let skipped = recursive(best.clone(), index + 1, &data);
+        if best.balance >= row.price {
+            let mut new_actions = best.actions.clone();
+            new_actions.push(index.clone());
+            let new_best = Best {
+                balance: best.balance - row.price,
+                actions: new_actions.clone(),
+                earnings: best.earnings + row.benefits,
+            };
+            let added = recursive(new_best, index + 1, &data);
 
-                recursive(new_balance, new_earnings, &new_actions, best, &data);
+            if added.earnings > skipped.earnings {
+                return added;
+            } else {
+                return skipped;
             }
+        } else {
+            return skipped;
         }
     }
-    recursive(balance, zero!(), &Vec::new(), &mut best, &data);
-    Ok(best)
+    Ok(recursive(best, 0, &data))
 }
 
 fn check_data(best: &Best, data: Vec<Row>, balance: Decimal) {
@@ -428,28 +428,39 @@ fn curve_duration(algorithme: usize, data: Vec<Row>, balance: Decimal) -> Result
     let mut complexity: Vec<i32> = Vec::new();
     let mut nb_actions: Vec<usize> = Vec::new();
     let data_len = data.len();
-    let step = 10;
-    for size in (0..1001).step_by(step) {
+    println!("datalen {}", data_len);
+    let step;
+    if data_len > 50 {
+        step = 10;
+    } else {
+        step = 1;
+    }
+    for size in (2..data_len).step_by(step) {
         let safe_size = max(2, min(size, data_len));
         let n = safe_size as f64;
         let mut reduced_data = data[0..safe_size].to_vec();
 
         nb_actions.push(safe_size);
         let start = Instant::now();
-        reduced_data.sort_by(|a, b| a.profit.partial_cmp(&b.profit).unwrap());
-        reduced_data.reverse();
+        if algorithme != 1 {
+            reduced_data.sort_by(|a, b| a.profit.partial_cmp(&b.profit).unwrap());
+            reduced_data.reverse();
+        }
         run_algorithme(algorithme, reduced_data, balance)?;
         let end = Instant::now();
         let algo_duration = end.duration_since(start);
         println!("Plot {} : {:?}", safe_size, algo_duration);
-        durations.push(algo_duration.as_micros() as i32);
+        // durations.push(algo_duration.as_micros() as i32);
+        durations.push(algo_duration.as_millis() as i32);
         // let p_complexity = 50.0 * n.log(10f64);
-        let p_complexity = 0.3 * n;
+        // let p_complexity = 0.3 * n;
+        let p_complexity = 2usize.pow(n as u32) as f64 * 0.0002;
         // let p_complexity = n * n.log(10f64);
         complexity.push((p_complexity) as i32);
     }
 
-    let root_area = BitMapBackend::new("explanations/curve_1.png", (600, 400)).into_drawing_area();
+    let root_area =
+        BitMapBackend::new("explanations/curve_brut_force.png", (600, 400)).into_drawing_area();
     root_area.fill(&WHITE).unwrap();
 
     let mut ctx = ChartBuilder::on(&root_area)
@@ -457,33 +468,65 @@ fn curve_duration(algorithme: usize, data: Vec<Row>, balance: Decimal) -> Result
         .set_label_area_size(LabelAreaPosition::Bottom, 40)
         .caption("Temps d'exécution / nombre d'actions", ("sans-serif", 30))
         .build_cartesian_2d(
-            0..data_len,
-            0..*durations.iter().max().unwrap(),
+            2..data_len + 1,
+            0..((*durations.iter().max().unwrap() as f64 * 1.1) as i32),
+            // 0..*durations.iter().max().unwrap(),
             // 0..durations[durations.len() - 1] * 2,
             // 0..(data_len + 100),
             // 0..((durations[durations.len() - 1] as f64 * 1.1) as i32),
-        )
-        .unwrap();
+        )?;
 
-    ctx.configure_mesh().draw().unwrap();
+    ctx.configure_mesh()
+        .x_desc("Nombre d'actions")
+        .y_desc("Durée (ms)")
+        .draw()
+        .unwrap();
 
     ctx.draw_series(
         AreaSeries::new(
-            (0..).step_by(step).zip(durations.iter().map(|x| *x)),
+            (2..).step_by(step).zip(durations.iter().map(|x| *x)),
             0,
             &RED.mix(0.2),
         )
         .border_style(&RED),
-    )?;
+    )?
+    .label("brut_force")
+    .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
 
     ctx.draw_series(
         AreaSeries::new(
-            (0..).step_by(step).zip(complexity.iter().map(|x| *x)),
+            (2..).step_by(step).zip(complexity.iter().map(|x| *x)),
             0,
             &BLUE.mix(0.2),
         )
         .border_style(&BLUE),
-    )?;
+    )?
+    .label("O(k*2^n) with k = 1/5000")
+    .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &BLUE));
+
+    ctx.draw_series(PointSeries::of_element(
+        (data_len - 4..data_len)
+            .step_by(step)
+            // durations starts x=2
+            .map(|x| (x, durations[x - 2])),
+        5,
+        ShapeStyle::from(&RED).filled(),
+        &|coord, size, style| {
+            EmptyElement::at(coord)
+                + Circle::new((0, 0), size, style)
+                + Text::new(
+                    format!("{}: {:.2}s", coord.0, coord.1 as f64 / 1000.0),
+                    (-69, -4),
+                    ("sans-serif", 15),
+                )
+        },
+    ))?;
+
+    ctx.configure_series_labels()
+        .background_style(&WHITE.mix(0.8))
+        .border_style(&BLACK)
+        .position(SeriesLabelPosition::UpperLeft)
+        .draw()?;
 
     Ok(())
 }
